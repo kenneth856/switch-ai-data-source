@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  ai-module:
+    build: .
+    container_name: ai-module
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app          # live reload — code changes reflect without rebuild
+    env_file:
+      - .env
+    restart: unless-stopped

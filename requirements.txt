@@ -1,0 +1,25 @@
+# ── Sprint 1: Core API + NetSuite connection ──────────────────────────────────
+fastapi==0.115.0            # API service framework
+uvicorn==0.30.6             # Web server
+requests==2.32.3            # HTTP requests
+requests-oauthlib==1.3.1    # NetSuite Token-Based Authentication (TBA)
+python-dotenv==1.0.1        # Load credentials from .env file
+pydantic==2.8.2             # Data validation
+httpx==0.27.2               # Async HTTP client
+
+# ── Sprint 1: Data processing + AI ───────────────────────────────────────────
+pandas==2.2.2               # Data processing and CSV handling
+numpy==1.26.4               # Numerical calculations
+scikit-learn==1.5.1         # AI/ML models (freight cost prediction)
+
+# ── Sprint 2: Box API + Supabase storage ──────────────────────────────────────
+boxsdk==3.9.2               # Box API — ingredient spec sheets and QA certs
+supabase==2.6.0             # Supabase database client
+postgrest==0.16.1           # Supabase PostgREST query builder
+
+# ── Sprint 3: Freight + scheduling ───────────────────────────────────────────
+schedule==1.2.2             # Automated data refresh scheduler
+
+# ── All Sprints: Testing + utilities ─────────────────────────────────────────
+pytest==8.3.2               # Unit and integration testing
+pytest-asyncio==0.23.8      # Async test support for FastAPI
