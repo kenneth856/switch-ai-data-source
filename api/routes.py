@@ -191,6 +191,25 @@ def get_monday_boards():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# GET /api/ingredients/specs?name=chamomile
+# Returns spec sheets and COAs for an ingredient from Supabase (synced from Box).
+# Partial name match — e.g. "acai" returns "Acai Berry Powder" records.
+@router.get("/ingredients/specs")
+def get_ingredient_specs(name: str):
+    from db.client import get_client
+    try:
+        db = get_client()
+        r = db.table("ingredient_specs").select("*").ilike("ingredient_name", f"%{name}%").execute()
+        if not r.data:
+            raise HTTPException(status_code=404, detail=f"No specs found for '{name}'")
+        return r.data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Ingredient specs fetch failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # GET /api/status
 # Health check — returns service status and whether model.pkl is loaded.
 # If model_loaded is false, /estimate returns 0 for cost and on-time probability.
