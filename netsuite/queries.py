@@ -97,9 +97,28 @@ ORDER BY i.itemid
 """
 
 
-# Pricing matrix — all items with their unit prices per price level
+# Most recent purchase cost per item — from Purchase Order transaction lines
+# rate = actual price Switch Supply paid to the supplier on the latest PO
+PURCHASE_COST_QUERY = """
+SELECT
+    i.id            AS item_id,
+    i.itemid        AS sku,
+    i.displayname   AS item_name,
+    tl.rate         AS purchase_cost,
+    t.trandate      AS last_po_date,
+    t.entity        AS vendor_id
+FROM transactionLine tl
+INNER JOIN item i        ON i.id  = tl.item
+INNER JOIN transaction t ON t.id  = tl.transaction
+WHERE t.type      = 'PurchOrd'
+AND   tl.rate     > 0
+AND   i.isinactive = 'F'
+ORDER BY i.itemid, t.trandate DESC
+"""
+
+
+# Sale pricing matrix — all items with their sale price levels (NOT purchase cost)
 # pricelevel 1 = Base Price, 2 = Online Price (verify in NetSuite Admin)
-# Join with item to get SKU and name alongside price
 PRICING_MATRIX_QUERY = """
 SELECT
     p.item          AS item_id,
