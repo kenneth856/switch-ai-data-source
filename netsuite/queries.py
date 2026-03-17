@@ -8,6 +8,17 @@ SELECT
 FROM vendor
 """
 
+# Vendors with country of origin extracted from company name
+# Pattern: "Vendor Name - Country - ID"
+VENDOR_COUNTRY_QUERY = """
+SELECT
+    id          AS vendor_id,
+    companyname AS vendor_name
+FROM vendor
+WHERE isinactive = 'F'
+ORDER BY companyname
+"""
+
 # All active items with weight data
 ITEM_QUERY = """
 SELECT

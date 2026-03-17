@@ -210,6 +210,66 @@ def get_ingredient_specs(name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# GET /api/ingredients/origin?sku=ORG-LEM-GRS-1
+# Returns all available countries of origin for an ingredient (by SKU).
+# If multiple origins exist, the salesperson must select one before building a quote.
+# Country is extracted from NetSuite vendor names on Purchase Orders.
+@router.get("/ingredients/origin")
+def get_ingredient_origin(sku: str):
+    from netsuite.client import run_suiteql
+    from netsuite.country import extract_country
+    try:
+        query = f"""
+        SELECT
+            i.itemid        AS sku,
+            i.displayname   AS item_name,
+            v.id            AS vendor_id,
+            v.companyname   AS vendor_name
+        FROM transactionLine tl
+        INNER JOIN item i        ON i.id  = tl.item
+        INNER JOIN transaction t ON t.id  = tl.transaction
+        INNER JOIN vendor v      ON v.id  = t.entity
+        WHERE t.type       = 'PurchOrd'
+        AND   i.isinactive = 'F'
+        AND   i.itemid     = '{sku}'
+        """
+        results = run_suiteql(query)
+        if not results:
+            raise HTTPException(status_code=404, detail=f"No purchase history found for SKU '{sku}'")
+
+        # Collect unique vendor + country combinations
+        seen = set()
+        origins = []
+        item_name = results[0].get("item_name", "")
+        for r in results:
+            country = extract_country(r.get("vendor_name", ""))
+            if not country:
+                continue
+            key = (r["vendor_id"], country)
+            if key not in seen:
+                seen.add(key)
+                origins.append({
+                    "vendor_id":   r["vendor_id"],
+                    "vendor_name": r["vendor_name"],
+                    "country":     country,
+                })
+
+        if not origins:
+            raise HTTPException(status_code=404, detail=f"No country of origin found for SKU '{sku}'")
+
+        return {
+            "sku":             sku,
+            "item_name":       item_name,
+            "origins":         origins,
+            "requires_selection": len(origins) > 1,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Ingredient origin fetch failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # GET /api/status
 # Health check — returns service status and whether model.pkl is loaded.
 # If model_loaded is false, /estimate returns 0 for cost and on-time probability.

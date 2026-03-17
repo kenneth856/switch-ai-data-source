@@ -16,6 +16,7 @@ scikit-learn==1.5.1         # AI/ML models (freight cost prediction)
 boxsdk==3.9.2               # Box API — ingredient spec sheets and QA certs
 supabase==2.6.0             # Supabase database client
 postgrest==0.16.1           # Supabase PostgREST query builder
+pycountry==24.6.1           # Country name validation for vendor origin extraction
 
 # ── Sprint 3: Freight + scheduling ───────────────────────────────────────────
 schedule==1.2.2             # Automated data refresh scheduler
