@@ -108,6 +108,24 @@ ORDER BY i.itemid
 """
 
 
+# Vendors who supplied a given SKU — used to extract country of origin from vendor name
+# Parameterized: replace {sku} with the actual SKU value before executing
+INGREDIENT_VENDOR_QUERY = """
+SELECT
+    i.itemid        AS sku,
+    i.displayname   AS item_name,
+    v.id            AS vendor_id,
+    v.companyname   AS vendor_name
+FROM transactionLine tl
+INNER JOIN item i        ON i.id  = tl.item
+INNER JOIN transaction t ON t.id  = tl.transaction
+INNER JOIN vendor v      ON v.id  = t.entity
+WHERE t.type       = 'PurchOrd'
+AND   i.isinactive = 'F'
+AND   i.itemid     = '{sku}'
+"""
+
+
 # Most recent purchase cost per item — from Purchase Order transaction lines
 # rate = actual price Switch Supply paid to the supplier on the latest PO
 PURCHASE_COST_QUERY = """

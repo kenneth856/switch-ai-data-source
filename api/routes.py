@@ -218,21 +218,9 @@ def get_ingredient_specs(name: str):
 def get_ingredient_origin(sku: str):
     from netsuite.client import run_suiteql
     from netsuite.country import extract_country
+    from netsuite.queries import INGREDIENT_VENDOR_QUERY
     try:
-        query = f"""
-        SELECT
-            i.itemid        AS sku,
-            i.displayname   AS item_name,
-            v.id            AS vendor_id,
-            v.companyname   AS vendor_name
-        FROM transactionLine tl
-        INNER JOIN item i        ON i.id  = tl.item
-        INNER JOIN transaction t ON t.id  = tl.transaction
-        INNER JOIN vendor v      ON v.id  = t.entity
-        WHERE t.type       = 'PurchOrd'
-        AND   i.isinactive = 'F'
-        AND   i.itemid     = '{sku}'
-        """
+        query = INGREDIENT_VENDOR_QUERY.format(sku=sku)
         results = run_suiteql(query)
         if not results:
             raise HTTPException(status_code=404, detail=f"No purchase history found for SKU '{sku}'")
