@@ -31,12 +31,10 @@ DENSITY_FACTORS = {
 _monday_density_cache: dict = {}
 
 
+# Load density factors from Monday.com ingredient board.
+# Maps ingredient name → density factor based on Product Form.
+# Called once at startup or on demand.
 def load_density_from_monday(board_id: str = "5027158260") -> dict:
-    """
-    Load density factors from Monday.com ingredient board.
-    Maps ingredient name → density factor based on Product Form.
-    Called once at startup or on demand.
-    """
     global _monday_density_cache
     try:
         import requests, json, os
@@ -99,11 +97,9 @@ CONTAINERS = {
 PACKAGING_ALLOWANCE = 0.10  # 10% extra for packaging
 
 
+# Returns CBM per kg for a given ingredient.
+# Priority: Monday.com board → hardcoded fallback → default
 def get_density_factor(ingredient_name: str) -> float:
-    """
-    Returns CBM per kg for a given ingredient.
-    Priority: Monday.com board → hardcoded fallback → default
-    """
     name = ingredient_name.lower().replace(" ", "_").replace("-", "_")
     # 1. Check Monday.com cache (loaded from Product Form)
     if _monday_density_cache and name in _monday_density_cache:
@@ -115,14 +111,10 @@ def get_density_factor(ingredient_name: str) -> float:
     return DENSITY_FACTORS["default"]
 
 
+# Calculate total CBM for a given ingredient and weight.
+# Includes 10% packaging allowance.
+# Returns dict with cbm, cbm_with_packaging, density_factor.
 def calculate_cbm(ingredient_name: str, weight_kg: float) -> dict:
-    """
-    Calculate total CBM for a given ingredient and weight.
-    Includes 10% packaging allowance.
-
-    Returns:
-        dict with cbm, cbm_with_packaging, density_factor
-    """
     density = get_density_factor(ingredient_name)
     cbm_raw = weight_kg * density
     cbm_with_packaging = cbm_raw * (1 + PACKAGING_ALLOWANCE)
@@ -137,13 +129,9 @@ def calculate_cbm(ingredient_name: str, weight_kg: float) -> dict:
     }
 
 
+# Recommend the best container type based on CBM and weight.
+# Returns dict with recommended container type and reason.
 def recommend_container(cbm: float, weight_kg: float) -> dict:
-    """
-    Recommend the best container type based on CBM and weight.
-
-    Returns:
-        dict with recommended container type and reason
-    """
     if cbm <= CONTAINERS["LCL"]["max_cbm"] and weight_kg <= CONTAINERS["LCL"]["max_kg"]:
         container = "LCL"
         reason = f"CBM ({cbm:.2f}) is under 15 — shared container is most cost-effective"
@@ -167,15 +155,10 @@ def recommend_container(cbm: float, weight_kg: float) -> dict:
     }
 
 
+# Full CBM estimate for an ingredient order.
+# Returns CBM calculation + container recommendation.
+# Example: estimate("chamomile", 5000) → CBM = 38.5 → recommend 40_FCL
 def estimate(ingredient_name: str, weight_kg: float) -> dict:
-    """
-    Full CBM estimate for an ingredient order.
-    Returns CBM calculation + container recommendation.
-
-    Example:
-        estimate("chamomile", 5000)
-        → CBM = 38.5 → recommend 40_FCL
-    """
     cbm_data = calculate_cbm(ingredient_name, weight_kg)
     container_data = recommend_container(cbm_data["cbm_with_packaging"], weight_kg)
 

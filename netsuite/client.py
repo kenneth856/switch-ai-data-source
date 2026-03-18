@@ -14,11 +14,9 @@ from config import (
 )
 
 
+# Builds OAuth1 Authorization header using HMAC-SHA256.
+# This is the working method confirmed against NetSuite.
 def _build_oauth_header(method: str, url: str) -> str:
-    """
-    Builds OAuth1 Authorization header using HMAC-SHA256.
-    This is the working method confirmed against NetSuite.
-    """
     consumer_key    = NETSUITE_CONSUMER_KEY
     consumer_secret = NETSUITE_CONSUMER_SECRET
     token_key       = NETSUITE_TOKEN_KEY
@@ -59,10 +57,8 @@ def _build_oauth_header(method: str, url: str) -> str:
     return f'OAuth realm="{account_id}", {parts}'
 
 
+# Runs a SuiteQL query against NetSuite and returns results as a list.
 def run_suiteql(query: str) -> list:
-    """
-    Runs a SuiteQL query against NetSuite and returns results as a list.
-    """
     url = f"https://{NETSUITE_ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
     response = requests.post(

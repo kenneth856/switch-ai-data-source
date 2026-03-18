@@ -20,8 +20,8 @@ def _load_csv(filename: str) -> pd.DataFrame | None:
     return df
 
 
+# Upsert all rows from df into the given Supabase table.
 def _upsert(table: str, df: pd.DataFrame, conflict_col: str):
-    """Upsert all rows from df into the given Supabase table."""
     client = get_client()
     records = df.to_dict(orient="records")
 

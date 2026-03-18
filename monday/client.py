@@ -33,8 +33,8 @@ def _headers() -> dict:
     }
 
 
+# Run a GraphQL query against the Monday.com API.
 def _query(gql: str) -> dict:
-    """Run a GraphQL query against the Monday.com API."""
     r = requests.post(
         MONDAY_API_URL,
         headers=_headers(),
@@ -49,11 +49,9 @@ def _query(gql: str) -> dict:
     return data.get("data", {})
 
 
+# List all boards the API token has access to.
+# Use this to find the board IDs for ingredients, suppliers, etc.
 def get_boards() -> list:
-    """
-    List all boards the API token has access to.
-    Use this to find the board IDs for ingredients, suppliers, etc.
-    """
     data = _query("""
     {
       boards(limit: 50) {
@@ -68,17 +66,11 @@ def get_boards() -> list:
     return data.get("boards", [])
 
 
+# Get all items (rows) from a Monday.com board.
+# board_id: The Monday.com board ID (get from get_boards())
+# limit:    Max items to fetch (default 500)
+# Returns list of items with all column values.
 def get_board_items(board_id: str, limit: int = 500) -> list:
-    """
-    Get all items (rows) from a Monday.com board.
-
-    Args:
-        board_id: The Monday.com board ID (get from get_boards())
-        limit:    Max items to fetch (default 500)
-
-    Returns:
-        List of items with all column values
-    """
     data = _query(f"""
     {{
       boards(ids: [{board_id}]) {{
@@ -108,13 +100,9 @@ def get_board_items(board_id: str, limit: int = 500) -> list:
     return items
 
 
+# Parse a Monday.com board into a clean ingredient list.
+# Returns list of dicts — one per ingredient with all fields flattened.
 def get_ingredient_list(board_id: str) -> list:
-    """
-    Parse a Monday.com board into a clean ingredient list.
-
-    Returns:
-        List of dicts — one per ingredient with all fields flattened
-    """
     items = get_board_items(board_id)
     ingredients = []
 
@@ -128,17 +116,9 @@ def get_ingredient_list(board_id: str) -> list:
     return ingredients
 
 
+# Search for a specific ingredient by name in a Monday.com board (case-insensitive).
+# Returns ingredient dict if found, None if not found.
 def search_ingredient(board_id: str, name: str) -> dict | None:
-    """
-    Search for a specific ingredient by name in a Monday.com board.
-
-    Args:
-        board_id: Monday.com board ID
-        name:     Ingredient name to search for (case-insensitive)
-
-    Returns:
-        Ingredient dict if found, None if not found
-    """
     ingredients = get_ingredient_list(board_id)
     name_lower = name.lower()
     for ing in ingredients:
@@ -147,11 +127,9 @@ def search_ingredient(board_id: str, name: str) -> dict | None:
     return None
 
 
+# Get all column definitions for a board.
+# Use this to understand what fields are available.
 def get_board_columns(board_id: str) -> list:
-    """
-    Get all column definitions for a board.
-    Use this to understand what fields are available.
-    """
     data = _query(f"""
     {{
       boards(ids: [{board_id}]) {{

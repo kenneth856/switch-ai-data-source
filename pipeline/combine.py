@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 os.makedirs(DATA_PROCESSED_DIR, exist_ok=True)
 
 
+# Extract country of origin from vendor name (e.g. 'Agrizo - India - 0002' → 'India').
 def extract_origin(vendor_name: str) -> str:
-    """Extract country of origin from vendor name (e.g. 'Agrizo - India - 0002' → 'India')."""
     if not isinstance(vendor_name, str):
         return "Unknown"
     # Common country keywords in vendor names

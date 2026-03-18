@@ -41,8 +41,8 @@ def save(df: pd.DataFrame, filename: str):
     logger.info("Saved %d records → %s", len(df), path)
 
 
+# Fetch monthly closing prices from Yahoo Finance for a given symbol.
 def _fetch_yahoo(symbol: str, label: str, range_: str = "2y", interval: str = "1mo") -> pd.DataFrame:
-    """Fetch monthly closing prices from Yahoo Finance for a given symbol."""
     url = (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
         f"?interval={interval}&range={range_}"

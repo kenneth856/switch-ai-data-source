@@ -12,20 +12,14 @@ def _load_model():
     return _bundle
 
 
+# Returns predicted_cost, predicted_delivery_days, on_time_probability (0.0 - 1.0).
+# cbm is the ingredient-specific cubic meter volume (from cbm_calculator).
+# Freight cost is driven by CBM, not just weight.
 def predict(origin: str, destination: str, carrier: str,
             weight_kg: float, cbm: float = 0.0,
             promised_days: float = 14,
             fuel_price_index: float = 3.5,
             market_rate_index: float = 1200) -> dict:
-    """
-    Returns:
-      predicted_cost           - estimated freight cost in USD
-      predicted_delivery_days  - estimated actual delivery days
-      on_time_probability      - probability of on-time delivery (0.0 - 1.0)
-
-    cbm is the ingredient-specific cubic meter volume (from cbm_calculator).
-    Freight cost is driven by CBM, not just weight.
-    """
     bundle = _load_model()
     encoders = bundle["encoders"]
 
