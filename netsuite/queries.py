@@ -88,22 +88,25 @@ ORDER BY t.trandate DESC
 """
 
 
-# Stock on hand at main warehouse (ID=510)
-# Excludes virtual/allocated locations: 520, 523, 524
+# Stock on hand — defaults to 510 (SS Main Warehouse), supports 215 (Teavision Main Warehouse)
+# Excludes consignment/allocated: 520 Mindful Foods, 523 Mindful Foods Allocated, 220 Teavision Blends
 # Returns items with positive stock only
+# Parameterized: replace {warehouse_ids} with comma-separated IDs e.g. "510" or "510,215"
+# Optionally filter by {sku_filter} — set to "AND i.itemid = 'SKU'" or "" for all items
 STOCK_ON_HAND_QUERY = """
 SELECT
     il.item              AS item_id,
     i.itemid             AS sku,
     i.displayname        AS item_name,
-    il.location          AS location_id,
+    il.location          AS warehouse_id,
     il.quantityonhand,
     il.quantityavailable
 FROM inventoryBalance il
 INNER JOIN item i ON i.id = il.item
-WHERE il.location = 510
+WHERE il.location IN ({warehouse_ids})
 AND il.quantityonhand > 0
 AND i.isinactive = 'F'
+{sku_filter}
 ORDER BY i.itemid
 """
 

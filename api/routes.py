@@ -1,7 +1,7 @@
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from freight.cbm_calculator import estimate as cbm_estimate
 from netsuite.queries import STOCK_ON_HAND_QUERY, PRICING_MATRIX_QUERY, VENDOR_PAYMENT_TERMS_QUERY, PURCHASE_COST_QUERY
 
@@ -102,15 +102,22 @@ def estimate_freight(request: FreightRequest):
 # GET /api/stock
 # Returns items with positive stock at main warehouse (NetSuite location ID=510).
 # Excludes virtual/allocated locations (520, 523, 524).
-# Fields: item_id, sku, item_name, location_id, quantityonhand, quantityavailable
+# Optional params: sku (filter by item SKU), warehouse_id (default 510 = SS Main Warehouse)
+# Fields: item_id, sku, item_name, warehouse_id, quantityonhand, quantityavailable
+# Supports multiple: ?warehouse_id=510&warehouse_id=215
 @router.get("/stock")
-def get_stock_on_hand():
+def get_stock_on_hand(sku: Optional[str] = None, warehouse_id: List[int] = Query(default=[510, 215])):
     from netsuite.client import run_suiteql
     try:
-        records = run_suiteql(STOCK_ON_HAND_QUERY)
+        sku_filter = f"AND i.itemid = '{sku}'" if sku else ""
+        warehouse_ids = ",".join(str(w) for w in warehouse_id)
+        query = STOCK_ON_HAND_QUERY.format(warehouse_ids=warehouse_ids, sku_filter=sku_filter)
+        records = run_suiteql(query)
     except Exception as e:
         logger.error("Stock on hand query failed: %s", e)
         raise HTTPException(status_code=500, detail=f"NetSuite error: {e}")
+    if not records:
+        raise HTTPException(status_code=404, detail="No stock found")
     return records
 
 
