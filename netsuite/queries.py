@@ -126,23 +126,25 @@ AND   i.itemid     = '{sku}'
 """
 
 
-# Most recent purchase cost per item — from Purchase Order transaction lines
+# Most recent purchase cost for a single item — from Purchase Order transaction lines
 # rate = actual price Switch Supply paid to the supplier on the latest PO
+# Parameterized: replace {sku} with the actual SKU value before executing
 PURCHASE_COST_QUERY = """
 SELECT
     i.id            AS item_id,
     i.itemid        AS sku,
     i.displayname   AS item_name,
     tl.rate         AS purchase_cost,
-    t.trandate      AS last_po_date,
-    t.entity        AS vendor_id
+    t.trandate      AS last_po_date
 FROM transactionLine tl
 INNER JOIN item i        ON i.id  = tl.item
 INNER JOIN transaction t ON t.id  = tl.transaction
-WHERE t.type      = 'PurchOrd'
-AND   tl.rate     > 0
+WHERE t.type       = 'PurchOrd'
+AND   tl.rate      > 0
 AND   i.isinactive = 'F'
-ORDER BY i.itemid, t.trandate DESC
+AND   i.itemid     = '{sku}'
+ORDER BY t.trandate DESC
+FETCH FIRST 1 ROWS ONLY
 """
 
 

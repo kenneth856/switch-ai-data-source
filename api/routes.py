@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from freight.cbm_calculator import estimate as cbm_estimate
-from netsuite.queries import STOCK_ON_HAND_QUERY, PRICING_MATRIX_QUERY, VENDOR_PAYMENT_TERMS_QUERY
+from netsuite.queries import STOCK_ON_HAND_QUERY, PRICING_MATRIX_QUERY, VENDOR_PAYMENT_TERMS_QUERY, PURCHASE_COST_QUERY
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -255,6 +255,40 @@ def get_ingredient_origin(sku: str):
         raise
     except Exception as e:
         logger.error("Ingredient origin fetch failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# GET /api/ingredients/margins?sku=ORG-CHA-PWD-1
+# Returns purchase cost and sell prices at 30%, 40%, 50% margin for a given SKU.
+# Purchase cost is taken from the most recent Purchase Order line in NetSuite.
+# Margin formula: sell_price = purchase_cost / (1 - margin)
+@router.get("/ingredients/margins")
+def get_ingredient_margins(sku: str):
+    from netsuite.client import run_suiteql
+    try:
+        query = PURCHASE_COST_QUERY.format(sku=sku)
+        results = run_suiteql(query)
+        if not results:
+            raise HTTPException(status_code=404, detail=f"No purchase cost found for SKU '{sku}'")
+        r = results[0]
+        cost = float(r.get("purchase_cost") or 0)
+        if cost <= 0:
+            raise HTTPException(status_code=404, detail=f"Purchase cost is zero for SKU '{sku}'")
+        return {
+            "sku":           r.get("sku"),
+            "item_name":     r.get("item_name"),
+            "purchase_cost": round(cost, 4),
+            "last_po_date":  r.get("last_po_date"),
+            "margins": {
+                "30%": round(cost / 0.70, 4),
+                "40%": round(cost / 0.60, 4),
+                "50%": round(cost / 0.50, 4),
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Ingredient margins fetch failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
