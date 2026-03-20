@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from freight.cbm_calculator import estimate as cbm_estimate
-from netsuite.queries import STOCK_ON_HAND_QUERY, PRICING_MATRIX_QUERY, VENDOR_PAYMENT_TERMS_QUERY, PURCHASE_COST_QUERY
+from netsuite.queries import STOCK_ON_HAND_QUERY, PRICING_MATRIX_QUERY, VENDOR_PAYMENT_TERMS_QUERY, PURCHASE_COST_QUERY, ITEM_QUERY
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -99,6 +99,25 @@ def estimate_freight(request: FreightRequest):
     )
 
 
+# GET /api/ingredients
+# Master ingredient list from NetSuite — all active items regardless of stock level.
+# Optional param: ?sku=CHAM-001 to filter by a specific SKU.
+# Fields: item_id, sku, item_name, itemtype, weight, weightunit, purchase_cost
+@router.get("/ingredients")
+def get_ingredients(sku: Optional[str] = None):
+    from netsuite.client import run_suiteql
+    try:
+        records = run_suiteql(ITEM_QUERY)
+    except Exception as e:
+        logger.error("Ingredients query failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"NetSuite error: {e}")
+    if sku:
+        records = [r for r in records if r.get("sku") == sku]
+    if not records:
+        raise HTTPException(status_code=404, detail="No ingredients found")
+    return records
+
+
 # GET /api/stock
 # Returns items with positive stock at main warehouse (NetSuite location ID=510).
 # Excludes virtual/allocated locations (520, 523, 524).
@@ -154,35 +173,6 @@ def get_vendor_payment_terms():
     return records
 
 
-# GET /api/ingredients?board_id=5027158260
-# Full ingredient list from a Monday.com board with all column values
-# (Product Form, category, supplier, etc.).
-@router.get("/ingredients")
-def get_ingredients(board_id: str):
-    from monday.client import get_ingredient_list
-    try:
-        return get_ingredient_list(board_id)
-    except Exception as e:
-        logger.error("Monday.com ingredient fetch failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# GET /api/ingredients/search?board_id=5027158260&name=chamomile
-# Case-insensitive partial name search against a Monday.com board.
-# Returns 404 if no match is found.
-@router.get("/ingredients/search")
-def search_ingredient(board_id: str, name: str):
-    from monday.client import search_ingredient
-    try:
-        result = search_ingredient(board_id, name)
-        if result is None:
-            raise HTTPException(status_code=404, detail=f"Ingredient '{name}' not found")
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Monday.com ingredient search failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # GET /api/ingredients/boards

@@ -19,16 +19,18 @@ WHERE isinactive = 'F'
 ORDER BY companyname
 """
 
-# All active items with weight data
+# All active ingredients/items — master list from NetSuite
+# itemtype: Inventory = physical ingredient, Assembly = blend/finished product
 ITEM_QUERY = """
 SELECT
-    id          AS item_id,
-    itemid,
-    displayname AS item_name,
-    weight,
-    weightunit
+    id              AS item_id,
+    itemid          AS sku,
+    displayname     AS item_name,
+    itemtype,
+    weight
 FROM item
 WHERE isinactive = 'F'
+ORDER BY itemid
 """
 
 # All transactions

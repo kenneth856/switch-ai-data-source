@@ -74,6 +74,5 @@ def run_suiteql(query: str) -> list:
     if response.status_code == 200:
         return response.json().get("items", [])
 
-    # Return error details for debugging
     error = response.json().get("o:errorDetails", [{}])[0].get("detail", "Unknown error")
     raise Exception(f"NetSuite API error {response.status_code}: {error}")
